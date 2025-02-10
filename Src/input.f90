@@ -3,6 +3,7 @@
 module input
   use iso_fortran_env
   use config
+  use mpi
   implicit none
 
   ! The file names are defined here and can be changed for custom builds.
@@ -18,10 +19,10 @@ contains
   subroutine read2fc(fc)
     implicit none
 
-    include "mpif.h"
+   !  include "mpif.h"
 
     real(kind=8),allocatable,intent(out) :: fc(:,:,:,:,:,:,:)
-    
+
     integer(kind=4) :: ntot,atom1,atom2,i,j,ip,ierr
     integer(kind=4) :: ix1,iy1,iz1,ix2,iy2,iz2,iatom1,iatom2
     real(kind=8) :: mm(natoms,natoms)
