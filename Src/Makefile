@@ -5,6 +5,7 @@ objects:=conductivity.o config.o data.o input.o iterations.o misc.o gruneisen.o 
 all: ../ShengBTE
 ../ShengBTE: $(objects)
 	$(MPIFC) $(FFLAGS) -o $@ $^ $(LDFLAGS) $(LIBS)
+	codesign -s - ../ShengBTE
 conductivity.o conductivity.mod: config.mod data.mod
 config.o config.mod:  misc.mod data.mod symmetry.mod
 input.o input.mod:  config.mod
