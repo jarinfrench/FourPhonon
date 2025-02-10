@@ -191,25 +191,25 @@ contains
        call MPI_BARRIER(MPI_COMM_WORLD,ierr)
        call MPI_FINALIZE(ierr)
     end if
-    if(tdep.eq. .false. .and. Ewald.ne.-1.0  )then
+    if(tdep.eqv. .false. .and. Ewald.ne.-1.0  )then
        if(myid.eq.0)write(error_unit,*) "Error: tdep=.FALSE. but Ewald parameter is given"
        call MPI_BARRIER(MPI_COMM_WORLD,ierr)
        call MPI_FINALIZE(ierr)
     end if
    ! ----------- sampling method add -----------
-    if(((four_phonon.eq. .false.) .and. (num_sample_process_4ph.gt.0)) .or.((four_phonon.eq. .false.) .and. (num_sample_process_4ph_phase_space.gt.0)) ) then
+    if(((four_phonon.eqv. .false.) .and. (num_sample_process_4ph.gt.0)) .or.((four_phonon.eqv. .false.) .and. (num_sample_process_4ph_phase_space.gt.0)) ) then
       if(myid.eq.0)write(error_unit,*) "Error: four_phonon=.false. but num_sample_process_4ph.gt.0 or num_sample_process_4ph_phase_space.gt.0. "
       call MPI_BARRIER(MPI_COMM_WORLD,ierr)
       call MPI_FINALIZE(ierr)
     end if
 
-    if(((convergence.eq. .true.) .and. (num_sample_process_3ph.gt.0)) ) then
+    if(((convergence.eqv. .true.) .and. (num_sample_process_3ph.gt.0)) ) then
       if(myid.eq.0)write(error_unit,*) "Error: convergence=.true. but num_sample_process_3ph.gt.0. "
       call MPI_BARRIER(MPI_COMM_WORLD,ierr)
       call MPI_FINALIZE(ierr)
     end if
 
-    if(((four_phonon_iteration.eq. .true.) .and. (num_sample_process_4ph.gt.0)) ) then
+    if(((four_phonon_iteration.eqv. .true.) .and. (num_sample_process_4ph.gt.0)) ) then
       if(myid.eq.0)write(error_unit,*) "Error: four_phonon_iteration=.true. but num_sample_process_4ph.gt.0. "
       call MPI_BARRIER(MPI_COMM_WORLD,ierr)
       call MPI_FINALIZE(ierr)
