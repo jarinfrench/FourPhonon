@@ -30,6 +30,7 @@ module phonon_routines
   use data
   use config
   use input
+  use mpi
   implicit none
 
 contains
@@ -38,7 +39,7 @@ contains
   subroutine eigenDM(omega,eigenvect,velocity)
     implicit none
 
-    include "mpif.h"
+   !  include "mpif.h"
 
     real(kind=8),intent(out) :: omega(nptk,nbands),velocity(nptk,nbands,3)
     complex(kind=8),intent(out) :: eigenvect(nptk,Nbands,Nbands)

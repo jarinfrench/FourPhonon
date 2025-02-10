@@ -30,6 +30,7 @@ module config
   use misc
   use data
   use symmetry
+  use mpi
   implicit none
 
   integer(kind=4) :: nelements,natoms,ngrid(3),norientations
@@ -72,7 +73,7 @@ contains
   subroutine read_config()
     implicit none
 
-    include "mpif.h"
+   !  include "mpif.h"
 
     integer(kind=4) :: i,j,k,ii,jj,kk,ll,info,ierr
     integer(kind=4) :: P(3)
@@ -177,17 +178,17 @@ contains
     nanowires=.false.
     onlyharmonic=.false.
     espresso=.false.
-    
+
     ! Four-phonon namelist
     four_phonon=.false.
     four_phonon_iteration=.false.
     read(1,nml=flags)
-    if(four_phonon_iteration.and.convergence.eq. .false.) then
+    if(four_phonon_iteration.and.(convergence.eqv. .false.)) then
       if(myid.eq.0)write(error_unit,*) "Error: four_phonon_iteration=.TRUE. but convergence=.FALSE."
       call MPI_BARRIER(MPI_COMM_WORLD,ierr)
       call MPI_FINALIZE(ierr)
     end if
-    if(four_phonon_iteration.and.four_phonon.eq. .false.) then
+    if(four_phonon_iteration.and.(four_phonon.eqv. .false.)) then
       if(myid.eq.0)write(error_unit,*) "Error: four_phonon_iteration=.TRUE. but four_phonon=.FALSE."
       call MPI_BARRIER(MPI_COMM_WORLD,ierr)
       call MPI_FINALIZE(ierr)
@@ -446,7 +447,7 @@ contains
 
     real(kind=8) :: base_sigma
 
-    integer(kind=4) :: nu
+   ! integer(kind=4) :: nu ! No longer used
 
     base_sigma=0.
    !  do nu=1,3
@@ -455,7 +456,8 @@ contains
 
    !  base_sigma=sqrt(base_sigma/6.)
 
-    base_sigma=DMAX1((dot_product(rlattvec(:,1),v)/ngrid(1))**2,(dot_product(rlattvec(:,2),v)/ngrid(2))**2,(dot_product(rlattvec(:,3),v)/ngrid(3))**2)
+    base_sigma=DMAX1((dot_product(rlattvec(:,1),v)/ngrid(1))**2, &
+               (dot_product(rlattvec(:,2),v)/ngrid(2))**2,(dot_product(rlattvec(:,3),v)/ngrid(3))**2)
     base_sigma=sqrt(base_sigma/2.)
 
   end function base_sigma

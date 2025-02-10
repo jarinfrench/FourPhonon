@@ -70,7 +70,7 @@ module symmetry
      end function spg_get_multiplicity
   end interface
 contains
-  
+
   ! Return the number of symmetry operations. Useful for allocating
   ! memory for get_operations().
   function get_num_operations(lattice,natoms,types,positions)

@@ -5,6 +5,8 @@
 !  Copyright (C) 2021 Tianli Feng <Tianli.Feng2011@gmail.com>
 !  Copyright (C) 2021 Xiulin Ruan <ruan@purdue.edu>
 !
+
+
 !  ShengBTE, a solver for the Boltzmann Transport Equation for phonons
 !  Copyright (C) 2012-2017 Wu Li <wu.li.phys2011@gmail.com>
 !  Copyright (C) 2012-2017 Jesús Carrete Montaña <jcarrete@gmail.com>
@@ -33,6 +35,7 @@ module processes
   use misc
   use data
   use config
+  use mpi
   !use omp_lib
   implicit none
 
@@ -52,7 +55,7 @@ contains
     integer(kind=4),intent(in) :: qprime
     integer(kind=4),intent(in) :: qdprime
     real(kind=8),intent(in) :: realqprime(3)
-    real(kind=8),intent(in) :: realqdprime(3)    
+    real(kind=8),intent(in) :: realqdprime(3)
     complex(kind=8),intent(in) :: eigenvect(nptk,Nbands,Nbands)
     integer(kind=4),intent(in) :: Ntri
     real(kind=8),intent(in) :: Phi(3,3,3,Ntri)
@@ -72,7 +75,7 @@ contains
     complex(kind=8) :: Vp0
 
     Vp_plus=0.d0
-    
+
     do ll=1,Ntri
        prefactor=1.d0/sqrt(masses(types(Index_i(ll)))*&
             masses(types(Index_j(ll)))*masses(types(Index_k(ll))))*&
@@ -105,7 +108,7 @@ contains
     integer(kind=4),intent(in) :: qprime
     integer(kind=4),intent(in) :: qdprime
     real(kind=8),intent(in) :: realqprime(3)
-    real(kind=8),intent(in) :: realqdprime(3)    
+    real(kind=8),intent(in) :: realqdprime(3)
     complex(kind=8),intent(in) :: eigenvect(nptk,Nbands,Nbands)
     integer(kind=4),intent(in) :: Ntri
     real(kind=8),intent(in) :: Phi(3,3,3,Ntri)
@@ -160,8 +163,8 @@ contains
       integer(kind=4),intent(in) :: qdprime
       integer(kind=4),intent(in) :: qtprime
       real(kind=8),intent(in) :: realqprime(3)
-      real(kind=8),intent(in) :: realqdprime(3) 
-      real(kind=8),intent(in) :: realqtprime(3)   
+      real(kind=8),intent(in) :: realqdprime(3)
+      real(kind=8),intent(in) :: realqtprime(3)
       complex(kind=8),intent(in) :: eigenvect(nptk,Nbands,Nbands)
       integer(kind=4),intent(in) :: Ntri
       real(kind=8),intent(in) :: Phi(3,3,3,3,Ntri)
@@ -224,8 +227,8 @@ contains
       integer(kind=4),intent(in) :: qdprime
       integer(kind=4),intent(in) :: qtprime
       real(kind=8),intent(in) :: realqprime(3)
-      real(kind=8),intent(in) :: realqdprime(3) 
-      real(kind=8),intent(in) :: realqtprime(3)   
+      real(kind=8),intent(in) :: realqdprime(3)
+      real(kind=8),intent(in) :: realqtprime(3)
       complex(kind=8),intent(in) :: eigenvect(nptk,Nbands,Nbands)
       integer(kind=4),intent(in) :: Ntri
       real(kind=8),intent(in) :: Phi(3,3,3,3,Ntri)
@@ -288,8 +291,8 @@ contains
    integer(kind=4),intent(in) :: qdprime
    integer(kind=4),intent(in) :: qtprime
    real(kind=8),intent(in) :: realqprime(3)
-   real(kind=8),intent(in) :: realqdprime(3) 
-   real(kind=8),intent(in) :: realqtprime(3)   
+   real(kind=8),intent(in) :: realqdprime(3)
+   real(kind=8),intent(in) :: realqtprime(3)
    complex(kind=8),intent(in) :: eigenvect(nptk,Nbands,Nbands)
    integer(kind=4),intent(in) :: Ntri
    real(kind=8),intent(in) :: Phi(3,3,3,3,Ntri)
@@ -427,7 +430,7 @@ contains
                    !-------- call ws_cell function to distinguish normal and umklapp processes
                    call ws_cell(q,shortest_q)
                    call ws_cell(qprime,shortest_qprime)
-                   call ws_cell(qdprime,shortest_qdprime)     
+                   call ws_cell(qdprime,shortest_qdprime)
                    !  write(*,"(1E20.10)") shortest_q(1)+shortest_qprime(1)-shortest_qdprime(1)
                    !  write(*,"(1E20.10)") shortest_qdprime(1)-realqdprime(1)
                    !----------------------Normal process condition
@@ -639,8 +642,6 @@ contains
        Indof2ndPhonon_minus,Indof3rdPhonon_minus,Gamma_minus,rate_scatt,rate_scatt_plus,rate_scatt_minus,WP3_plus,WP3_minus)
     implicit none
 
-    include "mpif.h"
-
     real(kind=8),intent(in) :: energy(nptk,nbands)
     real(kind=8),intent(in) :: velocity(nptk,nbands,3)
     complex(kind=8),intent(in) :: eigenvect(nptk,Nbands,Nbands)
@@ -721,6 +722,15 @@ contains
     WP3_plus_reduce=0.d0
     WP3_minus_reduce=0.d0
 
+
+
+
+
+
+
+
+
+
     do mm=myid+1,Nbands*NList,numprocs
        i=modulo(mm-1,Nbands)+1
        ll=int((mm-1)/Nbands)+1
@@ -751,6 +761,7 @@ contains
           rate_scatt_minus_reduce(i,ll)=sum(Gamma0(1:N_minus(mm)))*5.D-1
        end if
     end do
+
 
     deallocate(Gamma0)
     deallocate(Indof3rdPhonon)
@@ -785,6 +796,7 @@ contains
     deallocate(Gamma_plus_reduce)
     deallocate(Gamma_minus_reduce)
   end subroutine Ind_driver
+
 
   ! Compute the number of allowed absorption processes and their contribution
   ! to phase space.
@@ -965,12 +977,232 @@ contains
     end if
   end subroutine NP_minus
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   ! Wrapper around NP_plus and NP_minus that splits the work among processors.
   subroutine NP_driver(energy,velocity,Nlist,List,IJK,&
        N_plus,Pspace_plus_total,N_minus,Pspace_minus_total)
     implicit none
-
-    include "mpif.h"
 
     real(kind=8),intent(in) :: energy(nptk,nbands)
     real(kind=8),intent(in) :: velocity(nptk,nbands,3)
@@ -997,14 +1229,25 @@ contains
     N_plus_reduce=0
     N_minus_reduce=0
 
+
     do mm=myid+1,Nbands*Nlist,numprocs
+
+
        if (energy(List(int((mm-1)/Nbands)+1),modulo(mm-1,Nbands)+1).le.omega_max) then
+
           call NP_plus(mm,energy,velocity,Nlist,List,IJK,&
                N_plus_reduce(mm),Pspace_plus_reduce(mm))
           call NP_minus(mm,energy,velocity,Nlist,List,IJK,&
                N_minus_reduce(mm),Pspace_minus_reduce(mm))
+
+
+
+
+
+
        endif
     end do
+
 
     call MPI_ALLREDUCE(N_plus_reduce,N_plus,Nbands*Nlist,MPI_INTEGER,&
          MPI_SUM,MPI_COMM_WORLD,mm)
@@ -1046,7 +1289,7 @@ contains
     Gamma_plus_U=0.d00
 
     WP3_plus=0.d00
-  
+
     do ii=0,Ngrid(1)-1
        do jj=0,Ngrid(2)-1
           do kk=0,Ngrid(3)-1
@@ -1200,7 +1443,7 @@ contains
                       else
                          Gamma_minus_U=Gamma_minus_U+hbarp*pi/4.d0*WP3*abs(Vp)**2
                       endif
-                     !==================================================                     
+                     !==================================================
                       endif
                    end if
                 end if
@@ -1217,13 +1460,259 @@ contains
 
   end subroutine RTA_minus
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   ! Wrapper around 3ph RTA_plus and RTA_minus that splits the work among processors.
   subroutine RTA_driver(energy,velocity,eigenvect,Nlist,List,IJK,&
        Ntri,Phi,R_j,R_k,Index_i,Index_j,Index_k,rate_scatt,rate_scatt_plus,rate_scatt_minus,WP3_plus,WP3_minus,&
        rate_scatt_plus_N,rate_scatt_minus_N,rate_scatt_plus_U,rate_scatt_minus_U)
     implicit none
-
-    include "mpif.h"
 
     real(kind=8),intent(in) :: energy(nptk,nbands)
     real(kind=8),intent(in) :: velocity(nptk,nbands,3)
@@ -1250,7 +1739,7 @@ contains
     real(kind=8) :: Gamma_plus_N,Gamma_minus_N,Gamma_plus_U,Gamma_minus_U
     real(kind=8) :: rate_scatt_plus_reduce(Nbands,Nlist),rate_scatt_minus_reduce(Nbands,Nlist)
     real(kind=8) :: rate_scatt_plus_reduce_N(Nbands,Nlist),rate_scatt_minus_reduce_N(Nbands,Nlist)
-    real(kind=8) :: rate_scatt_plus_reduce_U(Nbands,Nlist),rate_scatt_minus_reduce_U(Nbands,Nlist) 
+    real(kind=8) :: rate_scatt_plus_reduce_U(Nbands,Nlist),rate_scatt_minus_reduce_U(Nbands,Nlist)
     real(kind=8) :: WP3_plus_reduce(Nbands*Nlist)
     real(kind=8) :: WP3_minus_reduce(Nbands*Nlist)
 
@@ -1272,6 +1761,7 @@ contains
        i=modulo(mm-1,Nbands)+1
        ll=int((mm-1)/Nbands)+1
        if (energy(List(ll),i).le.omega_max) then
+
           call RTA_plus(mm,energy,velocity,eigenvect,Nlist,List,&
                Ntri,Phi,R_j,R_k,Index_i,Index_j,Index_k,IJK,&
                Gamma_plus,WP3_plus_reduce(mm),&
@@ -1285,8 +1775,26 @@ contains
           rate_scatt_minus_reduce(i,ll)=Gamma_minus*5.D-1
           rate_scatt_minus_reduce_N(i,ll)=Gamma_minus_N*5.D-1
           rate_scatt_minus_reduce_U(i,ll)=Gamma_minus_U*5.D-1
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
        endif
     end do
+
 
     call MPI_ALLREDUCE(rate_scatt_plus_reduce,rate_scatt_plus,Nbands*Nlist,&
          MPI_DOUBLE_PRECISION,MPI_SUM,MPI_COMM_WORLD,mm)
@@ -1309,6 +1817,7 @@ contains
   end subroutine RTA_driver
 
   ! Subroutines for 4ph calculations
+
 
   ! Compute the number of allowed four-phonon ++ +- -- processes and
   ! their contribution to phase space.
@@ -1346,6 +1855,11 @@ contains
                qprime=IJK(:,ii)
                qdprime=IJK(:,jj)
                qtprime=IJK(:,ss)
+
+
+
+
+
                if (all(qtprime.eq.modulo(q+qprime+qdprime,ngrid))) then
                   do j=1,Nbands
                      startbranch=1
@@ -1370,6 +1884,7 @@ contains
                      end do
                   end do
                end if
+
             end do
          end do
       end do
@@ -1409,7 +1924,12 @@ contains
                do ss=jj,nptk
                   qprime=IJK(:,ii)
                   qdprime=IJK(:,jj)
+
+
+
+
                   qtprime=IJK(:,ss)
+
                   if (all(qtprime.eq.modulo(q+qprime-qdprime,ngrid))) then
                      do j=1,Nbands
                         do k=1,Nbands
@@ -1429,7 +1949,7 @@ contains
                                        N_plusminus=N_plusminus+1
                                        P_plusminus=P_plusminus+&
                                              exp(-(omega+omegap-omegadp-omegatp)**2/(sigma**2))/&
-                                             (sigma*sqrt(Pi)*dble(nptk)**3*nbands**4) 
+                                             (sigma*sqrt(Pi)*dble(nptk)**3*nbands**4)
                                     end if
                                  end if
                               end if
@@ -1437,6 +1957,7 @@ contains
                         end do
                      end do
                   end if
+
                end do
             end do
          end do
@@ -1476,7 +1997,12 @@ contains
                do ss=jj,nptk
                   qprime=IJK(:,ii)
                   qdprime=IJK(:,jj)
+
+
+
+
                   qtprime=IJK(:,ss)
+
                   if (all(qtprime.eq.modulo(q-qprime-qdprime,ngrid))) then
                      do j=1,Nbands
                         startbranch=1
@@ -1503,6 +2029,7 @@ contains
                         end do
                      end do
                   end if
+
                end do
             end do
          end do
@@ -1514,7 +2041,7 @@ contains
          N_plusplus,Pspace_plusplus_total,N_plusminus,Pspace_plusminus_total,N_minusminus,Pspace_minusminus_total)
     implicit none
 
-    include "mpif.h"
+   !  include "mpif.h"
 
     real(kind=8),intent(in) :: energy(nptk,nbands)
     real(kind=8),intent(in) :: velocity(nptk,nbands,3)
@@ -1788,7 +2315,7 @@ contains
       end do
       WP4_plusminus=WP4_plusminus/nptk/nptk
     end if
-    
+
     ! converting to THz
     Gamma_plusminus=Gamma_plusminus*3.37617087*1.d9/nptk/nptk
     Gamma_plusminus_N=Gamma_plusminus_N*3.37617087*1.d9/nptk/nptk
@@ -1901,7 +2428,7 @@ contains
       end do
       WP4_minusminus=WP4_minusminus/nptk/nptk
     end if
-    
+
     ! converting to THz
     Gamma_minusminus=Gamma_minusminus*3.37617087*1.d9/nptk/nptk
     Gamma_minusminus_N=Gamma_minusminus_N*3.37617087*1.d9/nptk/nptk
@@ -1911,13 +2438,14 @@ contains
 
   ! Wrapper around 4ph RTA subroutines with 3oh subroutines that splits the work among processors.
   subroutine RTA_driver_4ph(energy,velocity,eigenvect,Nlist,List,IJK,&
-       Ntri,Phi,R_j,R_k,R_l,Index_i,Index_j,Index_k,Index_l,rate_scatt_4ph,rate_scatt_plusplus,rate_scatt_plusminus,rate_scatt_minusminus,&
+       Ntri,Phi,R_j,R_k,R_l,Index_i,Index_j,Index_k,Index_l,rate_scatt_4ph,rate_scatt_plusplus,&
+       rate_scatt_plusminus,rate_scatt_minusminus,&
        WP4_plusplus,WP4_plusminus,WP4_minusminus,&
        rate_scatt_plusplus_N,rate_scatt_plusminus_N,rate_scatt_minusminus_N,&
        rate_scatt_plusplus_U,rate_scatt_plusminus_U,rate_scatt_minusminus_U)
     implicit none
 
-    include "mpif.h"
+   !  include "mpif.h"
 
     real(kind=8),intent(in) :: energy(nptk,nbands)
     real(kind=8),intent(in) :: velocity(nptk,nbands,3)
@@ -1935,19 +2463,26 @@ contains
     integer(kind=4),intent(in) :: Index_k(Ntri)
     integer(kind=4),intent(in) :: Index_l(Ntri)
     real(kind=8),intent(out) :: rate_scatt_4ph(Nbands,Nlist)
-    real(kind=8),intent(out) :: rate_scatt_plusplus(Nbands,Nlist),rate_scatt_plusminus(Nbands,Nlist),rate_scatt_minusminus(Nbands,Nlist)
-    real(kind=8),intent(out) :: rate_scatt_plusplus_N(Nbands,Nlist),rate_scatt_plusminus_N(Nbands,Nlist),rate_scatt_minusminus_N(Nbands,Nlist)
-    real(kind=8),intent(out) :: rate_scatt_plusplus_U(Nbands,Nlist),rate_scatt_plusminus_U(Nbands,Nlist),rate_scatt_minusminus_U(Nbands,Nlist)
+    real(kind=8),intent(out) :: rate_scatt_plusplus(Nbands,Nlist),rate_scatt_plusminus(Nbands,Nlist),&
+                                    rate_scatt_minusminus(Nbands,Nlist)
+    real(kind=8),intent(out) :: rate_scatt_plusplus_N(Nbands,Nlist),rate_scatt_plusminus_N(Nbands,Nlist),&
+                                    rate_scatt_minusminus_N(Nbands,Nlist)
+    real(kind=8),intent(out) :: rate_scatt_plusplus_U(Nbands,Nlist),rate_scatt_plusminus_U(Nbands,Nlist),&
+                                    rate_scatt_minusminus_U(Nbands,Nlist)
     real(kind=8),intent(out) :: WP4_plusplus(Nbands,Nlist),WP4_plusminus(Nbands,Nlist),WP4_minusminus(Nbands,Nlist)
 
     integer(kind=4) :: i
     integer(kind=4) :: ll
     integer(kind=4) :: mm
     real(kind=8) :: Gamma_plusplus,Gamma_plusminus,Gamma_minusminus
-    real(kind=8) :: Gamma_plusplus_N,Gamma_plusminus_N,Gamma_minusminus_N,Gamma_plusplus_U,Gamma_plusminus_U,Gamma_minusminus_U
-    real(kind=8) :: rate_scatt_plusplus_reduce(Nbands,Nlist),rate_scatt_plusminus_reduce(Nbands,Nlist),rate_scatt_minusminus_reduce(Nbands,Nlist)
-    real(kind=8) :: rate_scatt_plusplus_reduce_N(Nbands,Nlist),rate_scatt_plusminus_reduce_N(Nbands,Nlist),rate_scatt_minusminus_reduce_N(Nbands,Nlist)
-    real(kind=8) :: rate_scatt_plusplus_reduce_U(Nbands,Nlist),rate_scatt_plusminus_reduce_U(Nbands,Nlist),rate_scatt_minusminus_reduce_U(Nbands,Nlist) 
+    real(kind=8) :: Gamma_plusplus_N,Gamma_plusminus_N,Gamma_minusminus_N,Gamma_plusplus_U,&
+                        Gamma_plusminus_U,Gamma_minusminus_U
+    real(kind=8) :: rate_scatt_plusplus_reduce(Nbands,Nlist),rate_scatt_plusminus_reduce(Nbands,Nlist),&
+                        rate_scatt_minusminus_reduce(Nbands,Nlist)
+    real(kind=8) :: rate_scatt_plusplus_reduce_N(Nbands,Nlist),rate_scatt_plusminus_reduce_N(Nbands,Nlist),&
+                        rate_scatt_minusminus_reduce_N(Nbands,Nlist)
+    real(kind=8) :: rate_scatt_plusplus_reduce_U(Nbands,Nlist),rate_scatt_plusminus_reduce_U(Nbands,Nlist),&
+                        rate_scatt_minusminus_reduce_U(Nbands,Nlist)
     real(kind=8) :: WP4_plusplus_reduce(Nbands*Nlist),WP4_plusminus_reduce(Nbands*Nlist),WP4_minusminus_reduce(Nbands*Nlist)
 
     rate_scatt_4ph=0.d00

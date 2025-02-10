@@ -40,11 +40,12 @@ program ShengBTE
   use dos_routines
   use gruneisen
   use integrals
+  use mpi
   ! use omp_lib
   implicit none
 
-  include "mpif.h"
-  
+!   include "mpif.h"
+
 
   real(kind=8) :: kappa_sg(3,3),kappa_old(3,3),relchange
   integer(kind=4) :: i,j,ii,jj,kk,ll,mm
@@ -56,7 +57,7 @@ program ShengBTE
 
   real(kind=8),allocatable :: rate_scatt(:,:),rate_scatt_plus(:,:),rate_scatt_minus(:,:)
   real(kind=8),allocatable :: rate_scatt_plus_N(:,:),rate_scatt_minus_N(:,:),rate_scatt_plus_U(:,:),rate_scatt_minus_U(:,:)
-   
+
   ! Variables related to four-phonon scatterings
   real(kind=8),allocatable :: rate_scatt_4ph(:,:),rate_scatt_plusplus(:,:),rate_scatt_plusminus(:,:),rate_scatt_minusminus(:,:)
   real(kind=8),allocatable :: rate_scatt_plusplus_N(:,:),rate_scatt_plusminus_N(:,:),rate_scatt_minusminus_N(:,:)
@@ -85,7 +86,7 @@ program ShengBTE
   ! system, with each component ranging from 0 to Ngrid(:)-1.  Index_N
   ! is a mapping of 3 indices for an individual q-point into one index.
   integer(kind=4),allocatable :: Index_i(:),Index_j(:),Index_k(:),IJK(:,:),Index_N(:,:,:)
-  real(kind=8),allocatable :: Phi(:,:,:,:),R_j(:,:),R_k(:,:) 
+  real(kind=8),allocatable :: Phi(:,:,:,:),R_j(:,:),R_k(:,:)
 
   integer(kind=4) :: nlist,Ntotal_plus,Ntotal_minus
   integer(kind=4),allocatable :: nequi(:),list(:)
@@ -94,17 +95,17 @@ program ShengBTE
   integer(kind=4),allocatable :: Indof2ndPhonon_plus(:),Indof3rdPhonon_plus(:)
   integer(kind=4),allocatable :: Indof2ndPhonon_minus(:),Indof3rdPhonon_minus(:)
   real(kind=8) :: radnw,kappa_or_old
-  real(kind=8),allocatable :: Gamma_plus(:),Gamma_minus(:),Gamma_plus_N(:),Gamma_minus_N(:),Gamma_plus_U(:),Gamma_minus_U(:)
+  real(kind=8),allocatable :: Gamma_plus(:),Gamma_minus(:) ! ,Gamma_plus_N(:),Gamma_minus_N(:),Gamma_plus_U(:),Gamma_minus_U(:) ! None of these are used
   real(kind=8),allocatable :: Pspace_plus_total(:,:)
   real(kind=8),allocatable :: Pspace_minus_total(:,:)
   real(kind=8),allocatable :: ffunc(:,:),radnw_range(:),v_or(:,:),F_or(:,:)
   real(kind=8),allocatable :: kappa_or(:),kappa_wires(:,:),kappa_wires_reduce(:,:)
 
-  integer(kind=4) :: iorient,ierr,REQUIRED,PROVIDED
+  integer(kind=4) :: iorient,ierr,PROVIDED !,REQUIRED ! Not used
   character(len=4) :: aux,aux2
   character(len=1024) :: path
   character(len=128) :: sorientation
-  character(len=30) :: tempstring1,tempstring2,tempstring3
+  !character(len=30) :: tempstring1,tempstring2,tempstring3 ! not used
 
   real(kind=8) :: dnrm2
 
@@ -325,7 +326,7 @@ program ShengBTE
      end do
      close(1)
   end if
- 
+
 
   allocate(rate_scatt(Nbands,Nlist))
   allocate(rate_scatt_plus(Nbands,Nlist))
@@ -402,7 +403,7 @@ program ShengBTE
 
   Ntotal_plus=sum(N_plus)
   Ntotal_minus=sum(N_minus)
-  
+
   if(myid.eq.0)write(*,*) "Info: Ntotal_plus =",Ntotal_plus
   if(myid.eq.0)write(*,*) "Info: Ntotal_minus =",Ntotal_minus
   if (four_phonon) then
@@ -425,7 +426,7 @@ program ShengBTE
     end do
     close(1)
   end if
-  
+
   if(myid.eq.0) then
      open(1,file="BTE.P3_plus",status="replace")
      do ll=1,Nlist
@@ -506,7 +507,7 @@ program ShengBTE
   end if
 
   if(onlyharmonic) then
-      ! weighted phase space (WP3/WP4) is calculated here if onlyharmonic=.true., 
+      ! weighted phase space (WP3/WP4) is calculated here if onlyharmonic=.true.,
       ! otherwise WP3/WP4 will be calculated later together with BTE.w_anharmonic(BTE.w_3ph/4ph)
       if (myid.eq.0) print*, "Info: start calculating weighted phase space"
       do Tcounter=1,CEILING((T_max-T_min)/T_step)+1
@@ -535,7 +536,7 @@ program ShengBTE
             open(1,file="BTE.WP3_plus",status="replace")
             do i=1,Nbands
                do ll=1,Nlist
-                  write(1,"(6E14.5)") energy(list(ll),i),Pspace_plus_total(i,ll)                
+                  write(1,"(6E14.5)") energy(list(ll),i),Pspace_plus_total(i,ll)
                end do
             end do
             close(1)
@@ -645,7 +646,7 @@ program ShengBTE
   deallocate(grun)
 
   ! This is the most expensive part of the calculation: obtaining the
-  ! three-phonon / four-phonon scattering 
+  ! three-phonon / four-phonon scattering
   ! amplitudes for all allowed processes.
   ! When the iterative solution to the full linearized BTE is not
   ! requested (i.e., when the relaxation-time approximation is
@@ -703,7 +704,7 @@ program ShengBTE
              rate_scatt_plus,rate_scatt_minus,Pspace_plus_total,Pspace_minus_total)
         ! Will add fou-phonon iteration capabilities when we publish
         ! tag four_phonon_iteration is reserved here
-        if (four_phonon.and.four_phonon_iteration.eq. .false.) then
+        if (four_phonon.and.four_phonon_iteration.eqv. .false.) then
           call RTA_driver_4ph(energy,velocity,eigenvect,Nlist,List,IJK,&
                 Ntri_4fc,Psi,R_s,R_t,R_u,Index_r,Index_s,Index_t,Index_u,rate_scatt_4ph,&
                 rate_scatt_plusplus,rate_scatt_plusminus,rate_scatt_minusminus,&
@@ -726,7 +727,7 @@ program ShengBTE
         end if
      end if
 
-     
+
      if(convergence) then
         if(myid.eq.0) then
             open(1,file="BTE.WP3_plus",status="replace")
@@ -751,7 +752,7 @@ program ShengBTE
             end do
             close(1)
             if (four_phonon) then
-              if (four_phonon_iteration.eq. .false.) then
+              if (four_phonon_iteration.eqv. .false.) then
                 write(*,*) "Info: four_phonon_iteration=.false., using RTA on 4ph calculations"
               end if
               open(1,file="BTE.WP4_plusplus",status="replace")
@@ -818,7 +819,7 @@ program ShengBTE
               close(2)
               close(3)
               close(4)
-              if (four_phonon_iteration.eq. .false.) then
+              if (four_phonon_iteration.eqv. .false.) then
                 write(*,*) "Info: Output four-phonon N/U scattering rates"
                 open(5,file="BTE.w_4ph_normal",status="replace")
                 open(6,file="BTE.w_4ph_Umklapp",status="replace")
@@ -837,7 +838,7 @@ program ShengBTE
               end if
             end if
         end if
-     else 
+     else
         if(myid.eq.0) then
           write(*,*) "Info: convergence=.false."
           open(1,file="BTE.WP3_plus",status="replace")
@@ -906,8 +907,10 @@ program ShengBTE
                   write(1,"(6E20.10)") energy(list(ll),i),rate_scatt(i,ll)
                   write(2,"(6E20.10)") energy(list(ll),i),rate_scatt_plus(i,ll)
                   write(3,"(6E20.10)") energy(list(ll),i),rate_scatt_minus(i,ll)
-                  write(4,"(4E20.10)") energy(list(ll),i),rate_scatt_plus_N(i,ll),rate_scatt_minus_N(i,ll),rate_scatt_plus_N(i,ll)+rate_scatt_minus_N(i,ll)
-                  write(5,"(4E20.10)") energy(list(ll),i),rate_scatt_plus_U(i,ll),rate_scatt_minus_U(i,ll),rate_scatt_plus_U(i,ll)+rate_scatt_minus_U(i,ll)
+                  write(4,"(4E20.10)") energy(list(ll),i),rate_scatt_plus_N(i,ll),rate_scatt_minus_N(i,ll),&
+                                          rate_scatt_plus_N(i,ll)+rate_scatt_minus_N(i,ll)
+                  write(5,"(4E20.10)") energy(list(ll),i),rate_scatt_plus_U(i,ll),rate_scatt_minus_U(i,ll),&
+                                          rate_scatt_plus_U(i,ll)+rate_scatt_minus_U(i,ll)
               end do
             end do
             close(1)
@@ -947,7 +950,7 @@ program ShengBTE
             end if
         end if
      end if
-     
+
      ! Obtain the total scattering rates in the relaxation time approximation.
      ! Four-phonon scattering rates are denoted rate_scatt_4ph
      rate_scatt=rate_scatt+rate_scatt_isotope+rate_scatt_4ph
@@ -1184,7 +1187,7 @@ program ShengBTE
         end do
      end if
      if (myid.eq.0) call change_directory(".."//C_NULL_CHAR)
-     
+
   end do ! Tcounter
 
 
